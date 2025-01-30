@@ -65,7 +65,7 @@ def format_reward_func(completions, target, **kwargs):
             f.write(completion)
         
         # Check if the format is correct
-        regex = r"^<think>([^<]*(?:<(?!/?think>)[^<]*)*)<\/think>\n<answer>([\s\S]*?)<\/answer>$"
+        regex = r"(?s)^<think>([^<]*(?:<(?!/?think>)[^<]*)*)<\/think>(?=.*\\boxed\{((?:[^{}]|\{[^}]*\})*)\})"
 
         match = re.search(regex, completion, re.DOTALL) 
         # if the format is not correct, reward is 0
@@ -76,6 +76,42 @@ def format_reward_func(completions, target, **kwargs):
       except Exception:
         rewards.append(0.0)
     return rewards
+
+def convert_latex_to_python(latex_str):
+    """
+    Convert common LaTeX math expressions to Python-valid syntax.
+    """
+    # Replace LaTeX fraction commands with Python's fraction syntax
+    latex_str = re.sub(r'\\frac\{([^}]+)\}\{([^}]+)\}', r'(\1 / \2)', latex_str)
+    
+    # Replace LaTeX left and right brackets with regular parentheses
+    latex_str = latex_str.replace(r'\left(', '(').replace(r'\right)', ')')
+    
+    # Handle other possible LaTeX commands or formatting if necessary (extend as needed)
+    # For example, you can add more replacements here for other LaTeX functions.
+    
+    return latex_str
+
+def verify_equation(equation):
+    """
+    Verifies if the equation is true after parsing LaTeX-like math expressions.
+    
+    The equation is expected to be in the form: 'LHS = RHS', where LHS and RHS are mathematical expressions.
+    """
+    # Split the equation into left-hand side and right-hand side parts
+    lhs, rhs = equation.split('=')
+    
+    # Clean up the LaTeX expressions
+    lhs = convert_latex_to_python(lhs)
+    rhs = convert_latex_to_python(rhs)
+    
+    try:
+        # Evaluate both sides and compare
+        return eval(lhs) == eval(rhs)
+    except Exception as e:
+        # In case of invalid syntax or error during evaluation
+        print(f"Error evaluating the equation: {e}")
+        return False
 
 def equation_reward_func(completions, target, nums, **kwargs):
     """
@@ -96,7 +132,7 @@ def equation_reward_func(completions, target, nums, **kwargs):
         # add synthetic <think> as its already part of the prompt and prefilled for the assistant to more easily match the regex
         completion = "<think>" + completion
         # Check if the format is correct
-        match = re.search(r"<answer>(.*?)<\/answer>", completion)
+        match = re.search(r"(?s)^<think>([^<]*(?:<(?!/?think>)[^<]*)*)<\/think>(?=.*\\boxed\{((?:[^{}]|\{[^}]*\})*)\})", completion)
         if match is None:
             rewards.append(0.0)
             continue
@@ -109,6 +145,13 @@ def equation_reward_func(completions, target, nums, **kwargs):
         if sorted(used_numbers) != sorted(numbers):
             rewards.append(0.0)
             continue
+
+        if verify_equation(equation):
+            rewards.append(1.0)
+        else:
+            rewards.append(0.0)
+        #continue
+        """
         # Define a regex pattern that only allows numbers, operators, parentheses, and whitespace
         allowed_pattern = r'^[\d+\-*/().\s]+$'
         if not re.match(allowed_pattern, equation):
@@ -128,6 +171,7 @@ def equation_reward_func(completions, target, nums, **kwargs):
                     f.write(completion)
         else:
             rewards.append(0.0)
+        """
       except Exception:
             # If evaluation fails, reward is 0
             rewards.append(0.0) 
@@ -184,7 +228,7 @@ def grpo_function(
           },
           { 
             "role": "user",
-            "content": f"Using the numbers {numbers}, create an equation that equals {target}. You can use basic arithmetic operations (+, -, *, /) one or multiple times but each number can only be used once. Show your work in <think> </think> tags. And return the final equation in <answer> </answer> tags, for example <answer> (1 + 2) / 3 </answer>. Think step by step inside <think> tags."
+            "content": f"Using the numbers {numbers}, create an equation that equals {target}. You can use basic arithmetic operations (+, -, *, /) and each number can only be used once. Show your work in <think> </think> tags. And return the final equation and answer in \\boxed{{}}, for example  \\boxed{{95 - \left( \\frac{{21}}{{3}} \\right) = 88}}."
           },
           {
             "role": "assistant",
