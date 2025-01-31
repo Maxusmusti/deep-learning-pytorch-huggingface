@@ -166,7 +166,7 @@ def equation_reward_func(completions, target, nums, **kwargs):
         logger.info(f"PATTERN CHECK PASSED")
         # Evaluate the equation with restricted globals and locals
         result = eval(equation, {"__builtins__": None}, {})
-        logger.info(f"RESULT: {result} VS {GT}")
+        logger.info(f"RESULT: {result} VS {gt}")
         # Check if the equation is correct and matches the ground truth
         if abs(float(result) - float(gt)) < 1e-5:
             rewards.append(1.0)
@@ -249,7 +249,7 @@ def grpo_function(
 " present the final solution that you deem correct. The solution should remain a logical, accurate, concise expression"
 " style and detail necessary step needed to reach the conclusion, formatted as follows: <|begin_of_solution|>"
 " {final formatted, precise, and clear solution} <|end_of_solution|> Now, try to solve the following question through"
-" the above guidelines:") + f"Using the numbers {numbers}, create an equation that equals {target}. You can use basic arithmetic operations (+, -, *, /) and each number can only be used once. Show your work in <begin_of_thought> <end_of_thought> tags. And return the final equation and answer in <begin_of_solution> <end_of_solution> tags, for example <begin_of_solution> (1 + 2) / 3 <end_of_solution>. Solutions will not be scored unless within solution tags."
+" the above guidelines:") + f"Using the numbers {numbers}, create an equation that equals {target}. You can use basic arithmetic operations (+, -, *, /) and each number can only be used once. Show your work in <begin_of_thought> <end_of_thought> tags. And return the final equation in <begin_of_solution> <end_of_solution> tags, for example <begin_of_solution> (1 + 2) / 3 <end_of_solution>. Solutions will not be computed unless within solution tags."
           },
           {
             "role": "assistant",
