@@ -178,7 +178,7 @@ def equation_reward_func(completions, target, nums, **kwargs):
                     f.write(f"\n\n==============\n")
                     f.write(completion)
         else:
-            rewards.append(0.0)
+            rewards.append(0.1)
       except Exception:
             # If evaluation fails, reward is 0
             rewards.append(0.0) 
@@ -245,11 +245,11 @@ def grpo_function(
 " format: <|begin_of_thought|> {thought with steps separated with '\\n\\n'} <|end_of_thought|> Each step should"
 " include detailed considerations such as analisying questions, summarizing relevant findings, brainstorming new"
 " ideas, verifying the accuracy of the current steps, refining any errors, and revisiting previous steps. In the"
-" Solution section, based on various attempts, explorations, and reflections from the Thought section, systematically"
+" Solution section, based on various attempts, explorations, and reflections from the Thought section,"
 " present the final solution that you deem correct. The solution should remain a logical, accurate, concise expression"
-" style and detail necessary step needed to reach the conclusion, formatted as follows: <|begin_of_solution|>"
+" formatted as follows: <|begin_of_solution|>"
 " {final formatted, precise, and clear solution} <|end_of_solution|> Now, try to solve the following question through"
-" the above guidelines:") + f"Using the numbers {numbers}, create an equation that equals {target}. You can use basic arithmetic operations (+, -, *, /) and each number can only be used once. Show your work in <begin_of_thought> <end_of_thought> tags. And return the final equation in <begin_of_solution> <end_of_solution> tags, for example <begin_of_solution> (1 + 2) / 3 <end_of_solution>. Solutions will not be computed unless within solution tags."
+" the above guidelines:") + f"Using the numbers {numbers}, create an expression that equals {target}. You can use basic arithmetic operations (+, -, *, /) and each number can only be used once. Show your work in <begin_of_thought> <end_of_thought> tags. And return the final expression (just the expression) in <begin_of_solution> <end_of_solution> tags, for example <begin_of_solution> (1 + 2) / 3 <end_of_solution>. Solutions will not be computed unless within solution tags."
           },
           {
             "role": "assistant",
