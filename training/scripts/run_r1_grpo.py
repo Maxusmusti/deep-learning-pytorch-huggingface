@@ -133,7 +133,7 @@ def equation_reward_func(completions, target, nums, **kwargs):
       try:
         # add synthetic <think> as its already part of the prompt and prefilled for the assistant to more easily match the regex
         completion = "<begin_of_thought>" + completion
-        logger.info(f"FULL COMPLETION: {completion}")
+        #logger.info(f"FULL COMPLETION: {completion}")
         # Check if the format is correct
         match = re.search(r"(?s)^<begin_of_thought>((?!<begin_of_thought>).*?)<end_of_thought>.*?<begin_of_solution>((?!<begin_of_solution>).*?)<end_of_solution>$", completion)
         #regex = r"(?s)^<begin_of_thought>((?!<begin_of_thought>).*?)<end_of_thought>.*?<begin_of_solution>((?!<begin_of_solution>).*?)<end_of_solution>$"
@@ -145,12 +145,12 @@ def equation_reward_func(completions, target, nums, **kwargs):
         logger.info(f"EQUATION: {equation}")
         # Extract all numbers from the equation
         used_numbers = [int(n) for n in re.findall(r'\d+', equation)]
-        
+        logger.info(f"Numbers: {used_numbers}")
         # Check if all numbers are used exactly once
         if sorted(used_numbers) != sorted(numbers):
             rewards.append(0.0)
             continue
-
+        logger.info(f"NUMBER CHECK PASSED")
         """
         if verify_equation(equation):
             rewards.append(1.0)
@@ -163,12 +163,14 @@ def equation_reward_func(completions, target, nums, **kwargs):
         if not re.match(allowed_pattern, equation):
            rewards.append(0.0)
            continue
-        
+        logger.info(f"PATTERN CHECK PASSED")
         # Evaluate the equation with restricted globals and locals
         result = eval(equation, {"__builtins__": None}, {})
+        logger.info(f"RESULT: {result} VS {GT}")
         # Check if the equation is correct and matches the ground truth
         if abs(float(result) - float(gt)) < 1e-5:
             rewards.append(1.0)
+            logger.info(f"WE DID IT")
             if random.random() < 0.10:  # 10% chance to write fully successful samples into a file
                 os.makedirs("completion_samples", exist_ok=True)
                 log_file = os.path.join("completion_samples", "success_completion_samples.txt")
