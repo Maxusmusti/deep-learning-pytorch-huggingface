@@ -135,13 +135,13 @@ def equation_reward_func(completions, target, nums, **kwargs):
         completion = "<begin_of_thought>" + completion
         logger.info(f"FULL COMPLETION: {completion}")
         # Check if the format is correct
-        #match = re.search(r"(?s)^<think>([^<]*(?:<(?!/?think>)[^<]*)*)<\/think>(?=.*\\boxed\{((?:[^{}]|\{[^}]*\})*)\})", completion)
-        regex = r"(?s)^<begin_of_thought>((?!<begin_of_thought>).*?)<end_of_thought>.*?<begin_of_solution>((?!<begin_of_solution>).*?)<end_of_solution>$"
+        match = re.search(r"(?s)^<begin_of_thought>((?!<begin_of_thought>).*?)<end_of_thought>.*?<begin_of_solution>((?!<begin_of_solution>).*?)<end_of_solution>$", completion)
+        #regex = r"(?s)^<begin_of_thought>((?!<begin_of_thought>).*?)<end_of_thought>.*?<begin_of_solution>((?!<begin_of_solution>).*?)<end_of_solution>$"
         if match is None:
             rewards.append(0.0)
             continue
         # Extract the "answer" part from the completion
-        equation = match.group(1).strip()
+        equation = match.group(2).strip()
         logger.info(f"EQUATION: {equation}")
         # Extract all numbers from the equation
         used_numbers = [int(n) for n in re.findall(r'\d+', equation)]
