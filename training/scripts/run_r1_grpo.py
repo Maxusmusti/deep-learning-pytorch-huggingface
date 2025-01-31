@@ -56,7 +56,7 @@ def format_reward_func(completions, target, **kwargs):
 
       try:
         # add synthetic <think> as its already part of the prompt and prefilled for the assistant to more easily match the regex
-        completion = "<think>" + completion
+        completion = "<begin_of_thought>" + completion
         if random.random() < 0.1:  # 1% chance to write samples into a file
           os.makedirs("completion_samples", exist_ok=True)
           log_file = os.path.join("completion_samples", "completion_samples.txt")
@@ -65,7 +65,9 @@ def format_reward_func(completions, target, **kwargs):
             f.write(completion)
         
         # Check if the format is correct
-        regex = r"(?s)^<think>([^<]*(?:<(?!/?think>)[^<]*)*)<\/think>(?=.*\\boxed\{((?:[^{}]|\{[^}]*\})*)\})"
+        #regex = r"(?s)^<think>([^<]*(?:<(?!/?think>)[^<]*)*)<\/think>(?=.*\\boxed\{((?:[^{}]|\{[^}]*\})*)\})"
+        regex = r"(?s)^<begin_of_thought>((?!<begin_of_thought>).*?)<end_of_thought>.*?<begin_of_solution>((?!<begin_of_solution>).*?)<end_of_solution>$"
+
 
         match = re.search(regex, completion, re.DOTALL) 
         # if the format is not correct, reward is 0
@@ -130,9 +132,10 @@ def equation_reward_func(completions, target, nums, **kwargs):
     for completion, gt, numbers in zip(completions, target, nums):
       try:
         # add synthetic <think> as its already part of the prompt and prefilled for the assistant to more easily match the regex
-        completion = "<think>" + completion
+        completion = "<begin_of_thought>" + completion
         # Check if the format is correct
-        match = re.search(r"(?s)^<think>([^<]*(?:<(?!/?think>)[^<]*)*)<\/think>(?=.*\\boxed\{((?:[^{}]|\{[^}]*\})*)\})", completion)
+        #match = re.search(r"(?s)^<think>([^<]*(?:<(?!/?think>)[^<]*)*)<\/think>(?=.*\\boxed\{((?:[^{}]|\{[^}]*\})*)\})", completion)
+        regex = r"(?s)^<begin_of_thought>((?!<begin_of_thought>).*?)<end_of_thought>.*?<begin_of_solution>((?!<begin_of_solution>).*?)<end_of_solution>$"
         if match is None:
             rewards.append(0.0)
             continue
@@ -146,6 +149,7 @@ def equation_reward_func(completions, target, nums, **kwargs):
             rewards.append(0.0)
             continue
 
+        """
         if verify_equation(equation):
             rewards.append(1.0)
         else:
@@ -171,7 +175,6 @@ def equation_reward_func(completions, target, nums, **kwargs):
                     f.write(completion)
         else:
             rewards.append(0.0)
-        """
       except Exception:
             # If evaluation fails, reward is 0
             rewards.append(0.0) 
@@ -224,15 +227,17 @@ def grpo_function(
     def generate_r1_prompt(numbers, target):
         r1_prefix = [{
             "role": "system",
-            "content": "You are a helpful assistant. You first thinks about the reasoning process in the mind and then provides the user with the answer."
+            "content": "I am a Red Hat® Instruct Model, an AI language model developed by Red Hat and IBM Research based on the granite-3.1-8b-base model. My primary role is to serve as a chat assistant."
           },
           { 
             "role": "user",
-            "content": f"Using the numbers {numbers}, create an equation that equals {target}. You can use basic arithmetic operations (+, -, *, /) and each number can only be used once. Show your work in <think> </think> tags. And return the final equation and answer in \\boxed{{}}, for example  \\boxed{{95 - \left( \\frac{{21}}{{3}} \\right) = 88}}."
+            #"content": f"Using the numbers {numbers}, create an equation that equals {target}. You can use basic arithmetic operations (+, -, *, /) and each number can only be used once. Show your work in <begin_of_thought> <end_of_thought> tags. And return the final equation and answer in \\boxed{{}}, for example  \\boxed{{95 - \left( \\frac{{21}}{{3}} \\right) = 88}}, within the <begin_of_solution>."
+            "content": f"Using the numbers {numbers}, create an equation that equals {target}. You can use basic arithmetic operations (+, -, *, /) and each number can only be used once. Show your work in <begin_of_thought> <end_of_thought> tags. And return the final equation and answer in <begin_of_solution> <end_of_solution> tags, for example <begin_of_solution> (1 + 2) / 3 <end_of_solution>. Think step by step inside <begin_of_thought> <end_of_thought> tags."            
           },
           {
             "role": "assistant",
-            "content": "Let me solve this step by step.\n<think>"
+            #"content": "Let me solve this step by step.\n<think>"
+            "content": "Let me solve this step by step.\n<begin_of_thought>"
           }]
         return {"prompt": tokenizer.apply_chat_template(r1_prefix, tokenize=False, continue_final_message=True), "target": target, "nums": numbers}
 
