@@ -133,6 +133,7 @@ def equation_reward_func(completions, target, nums, **kwargs):
       try:
         # add synthetic <think> as its already part of the prompt and prefilled for the assistant to more easily match the regex
         completion = "<begin_of_thought>" + completion
+        logger.info(f"FULL COMPLETION: {completion}")
         # Check if the format is correct
         #match = re.search(r"(?s)^<think>([^<]*(?:<(?!/?think>)[^<]*)*)<\/think>(?=.*\\boxed\{((?:[^{}]|\{[^}]*\})*)\})", completion)
         regex = r"(?s)^<begin_of_thought>((?!<begin_of_thought>).*?)<end_of_thought>.*?<begin_of_solution>((?!<begin_of_solution>).*?)<end_of_solution>$"
@@ -141,6 +142,7 @@ def equation_reward_func(completions, target, nums, **kwargs):
             continue
         # Extract the "answer" part from the completion
         equation = match.group(1).strip()
+        logger.info(f"EQUATION: {equation}")
         # Extract all numbers from the equation
         used_numbers = [int(n) for n in re.findall(r'\d+', equation)]
         
@@ -232,7 +234,20 @@ def grpo_function(
           { 
             "role": "user",
             #"content": f"Using the numbers {numbers}, create an equation that equals {target}. You can use basic arithmetic operations (+, -, *, /) and each number can only be used once. Show your work in <begin_of_thought> <end_of_thought> tags. And return the final equation and answer in \\boxed{{}}, for example  \\boxed{{95 - \left( \\frac{{21}}{{3}} \\right) = 88}}, within the <begin_of_solution>."
-            "content": f"Using the numbers {numbers}, create an equation that equals {target}. You can use basic arithmetic operations (+, -, *, /) and each number can only be used once. Show your work in <begin_of_thought> <end_of_thought> tags. And return the final equation and answer in <begin_of_solution> <end_of_solution> tags, for example <begin_of_solution> (1 + 2) / 3 <end_of_solution>. Think step by step inside <begin_of_thought> <end_of_thought> tags."            
+            #"content": f"Using the numbers {numbers}, create an equation that equals {target}. You can use basic arithmetic operations (+, -, *, /) and each number can only be used once. Show your work in <begin_of_thought> <end_of_thought> tags. And return the final equation and answer in <begin_of_solution> <end_of_solution> tags, for example <begin_of_solution> (1 + 2) / 3 <end_of_solution>. Think step by step inside <begin_of_thought> <end_of_thought> tags."
+            "content": ("Your role as an assistant involves thoroughly exploring questions through a systematic"
+" long thinking process before providing the final precise and accurate solutions. This requires engaging"
+" in a comprehensive cycle of analysis, summarizing, exploration, reassessment, reflection, backtracing,"
+" and iteration to develop well-considered thinking process. Please structure your response into two main"
+" sections: Thought and Solution. In the Thought section, detail your reasoning process using the specified"
+" format: <|begin_of_thought|> {thought with steps separated with '\\n\\n'} <|end_of_thought|> Each step should"
+" include detailed considerations such as analisying questions, summarizing relevant findings, brainstorming new"
+" ideas, verifying the accuracy of the current steps, refining any errors, and revisiting previous steps. In the"
+" Solution section, based on various attempts, explorations, and reflections from the Thought section, systematically"
+" present the final solution that you deem correct. The solution should remain a logical, accurate, concise expression"
+" style and detail necessary step needed to reach the conclusion, formatted as follows: <|begin_of_solution|>"
+" {final formatted, precise, and clear solution} <|end_of_solution|> Now, try to solve the following question through"
+" the above guidelines:") + f"Using the numbers {numbers}, create an equation that equals {target}. You can use basic arithmetic operations (+, -, *, /) and each number can only be used once. Show your work in <begin_of_thought> <end_of_thought> tags. And return the final equation and answer in <begin_of_solution> <end_of_solution> tags, for example <begin_of_solution> (1 + 2) / 3 <end_of_solution>. Solutions will not be scored unless within solution tags."
           },
           {
             "role": "assistant",
