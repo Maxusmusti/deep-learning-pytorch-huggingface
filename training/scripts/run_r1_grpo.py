@@ -12,6 +12,7 @@ from transformers.trainer_utils import get_last_checkpoint
 from transformers import AutoTokenizer
 from datasets import load_dataset
 from trl import GRPOConfig, GRPOTrainer, get_peft_config, ModelConfig, TrlParser
+from math_cool import *
 
 
 ########################
@@ -142,12 +143,28 @@ def equation_reward_func(completions, target, nums, **kwargs):
             continue
         # Extract the "answer" part from the completion
         equation = match.group(2).strip()
-        logger.info(f"EQUATION: {equation}")
+        #logger.info(f"EQUATION: {equation}")
+        #logger.info(f"TARGET: {target}")
+        logger.info(f"SIMPLE EQ: {memoized_canonical_form(extract(equation))}")
+        logger.info(f"SIMPLE TR: {memoized_canonical_form(extract(target))}")
         # Extract all numbers from the equation
+
+
+        if math_equal(memoized_canonical_form(extract(equation)),memoized_canonical_form(extract(target))):
+            reward.append(1.0)
+        else:
+            reward.append(0.0)
+        continue
+      except Exception:
+        # If evaluation fails, reward is 0
+        rewards.append(0.0) 
+
+
+        """
         pattern = r'\\boxed\{([^{}]*(?:\{[^{}]*\}[^{}]*)*)\}'
         matches = re.findall(pattern, equation)
         equation = matches[0]
-        """
+
         if "=" in equation:
             sides = equation.split("=")
             if sides[1].strip() == gt:
@@ -155,7 +172,7 @@ def equation_reward_func(completions, target, nums, **kwargs):
             else:
                 rewards.append(0.0)
                 continue
-        """
+
 
         used_numbers = [int(n) for n in re.findall(r'\d+', equation)]
         logger.info(f"Numbers: {used_numbers}")
@@ -197,6 +214,7 @@ def equation_reward_func(completions, target, nums, **kwargs):
       except Exception:
             # If evaluation fails, reward is 0
             rewards.append(0.0) 
+        """
     return rewards
 
 def get_checkpoint(training_args: GRPOConfig):
@@ -234,24 +252,24 @@ def grpo_function(
     # Load datasets
     ###############
     # Load dataset from Hugging Face Hub
-    dataset = load_dataset(script_args.dataset_id_or_path, split=script_args.dataset_splits)
+    dataset = load_dataset("json", data_files=script_args.dataset_id_or_path, split=script_args.dataset_splits)
     # select a random subset of 50k samples
-    dataset = dataset.shuffle(seed=42).select(range(50000))
+    dataset = dataset.shuffle(seed=42).select(range(10000))
 
     #####################
     # Prepare and format dataset
     #####################
 
     # gemerate r1 prompt with a prefix for the model to already start with the thinking process
-    def generate_r1_prompt(numbers, target):
+    def generate_r1_prompt(question, target):
         r1_prefix = [{
             "role": "system",
-            "content": "I am a Red Hat® Instruct Model, an AI language model developed by Red Hat and IBM Research based on the granite-3.1-8b-base model. My primary role is to serve as a chat assistant."
+            "content": "A conversation between User and Assistant. The user asks a question, and the Assistant solves it. The assistant first thinks about the reasoning process in the mind and then provides the user with the answer. The reasoning process and answer are enclosed within <begin_of_thought> <end_of_thought> and <begin_of_solution> <end_of_solution> tags, respectively, i.e., <begin_of_thought> reasoning process here <end_of_thought> <begin_of_solution> answer here <end_of_solution>."
           },
           { 
             "role": "user",
             #"content": f"Using the numbers {numbers}, create an equation that equals {target}. You can use basic arithmetic operations (+, -, *, /) and each number can only be used once. Show your work in <begin_of_thought> <end_of_thought> tags. And return the final equation and answer in \\boxed{{}}, for example  \\boxed{{95 - \left( \\frac{{21}}{{3}} \\right) = 88}}, within the <begin_of_solution>."
-            "content": f"Your role as an assistant involves thoroughly exploring questions through a systematic long thinking process before providing the final precise and accurate solutions. Using the numbers {numbers}, create an equation that equals {target}. You can use basic arithmetic operations (+, -, *, /) and each number can only be used once. Show your work in <begin_of_thought> <end_of_thought> tags. And return the final equation and answer in <begin_of_solution> <end_of_solution> tags within \\boxed{{}}, for example <begin_of_solution> \\boxed{{95 - \left( \\frac{{21}}{{3}} \\right) = 88}} <end_of_solution>. Think step by step inside <begin_of_thought> <end_of_thought> tags."
+            "content": f"{question}"
             #"content": ("Your role as an assistant involves thoroughly exploring questions through a systematic"
             #" long thinking process before providing the final precise and accurate solutions. This requires engaging"
             #" in a comprehensive cycle of analysis, summarizing, exploration, reassessment, reflection, backtracing,"
@@ -270,11 +288,12 @@ def grpo_function(
             "role": "assistant",
             #"content": "Let me solve this step by step.\n<think>"
             "content": "Let me solve this step by step.\n<begin_of_thought>"
-          }]
-        return {"prompt": tokenizer.apply_chat_template(r1_prefix, tokenize=False, continue_final_message=True), "target": target, "nums": numbers}
+          }
+          ]
+        return {"prompt": tokenizer.apply_chat_template(r1_prefix, tokenize=False, continue_final_message=True), "target": target, "nums": question}
 
     # convert our dataset to the r1 prompt
-    dataset = dataset.map(lambda x: generate_r1_prompt(x["nums"], x["target"]))
+    dataset = dataset.map(lambda x: generate_r1_prompt(x["problem"], x["answer"]))
 
     # split the dataset into train and test
     train_test_split = dataset.train_test_split(test_size=0.1)
