@@ -144,20 +144,35 @@ def equation_reward_func(completions, target, nums, **kwargs):
         equation = match.group(2).strip()
         logger.info(f"EQUATION: {equation}")
         # Extract all numbers from the equation
+        pattern = r'\\boxed\{([^{}]*(?:\{[^{}]*\}[^{}]*)*)\}'
+        matches = re.findall(pattern, equation)
+        equation = matches[0]
+        """
+        if "=" in equation:
+            sides = equation.split("=")
+            if sides[1].strip() == gt:
+                equation = sides[0]
+            else:
+                rewards.append(0.0)
+                continue
+        """
+
         used_numbers = [int(n) for n in re.findall(r'\d+', equation)]
         logger.info(f"Numbers: {used_numbers}")
         # Check if all numbers are used exactly once
-        if sorted(used_numbers) != sorted(numbers):
+        if sorted(used_numbers) != sorted(numbers.append(gt)):
             rewards.append(0.0)
             continue
         logger.info(f"NUMBER CHECK PASSED")
-        """
+
         if verify_equation(equation):
             rewards.append(1.0)
+            logger.info("WOOHOO")
         else:
             rewards.append(0.0)
-        #continue
-        """
+            logger.info("RATS")
+        continue
+
         # Define a regex pattern that only allows numbers, operators, parentheses, and whitespace
         allowed_pattern = r'^[\d+\-*/().\s]+$'
         if not re.match(allowed_pattern, equation):
@@ -236,7 +251,7 @@ def grpo_function(
           { 
             "role": "user",
             #"content": f"Using the numbers {numbers}, create an equation that equals {target}. You can use basic arithmetic operations (+, -, *, /) and each number can only be used once. Show your work in <begin_of_thought> <end_of_thought> tags. And return the final equation and answer in \\boxed{{}}, for example  \\boxed{{95 - \left( \\frac{{21}}{{3}} \\right) = 88}}, within the <begin_of_solution>."
-            "content": f"Using the numbers {numbers}, create an equation that equals {target}. You can use basic arithmetic operations (+, -, *, /) and each number can only be used once. Show your work in <begin_of_thought> <end_of_thought> tags. And return the final equation and answer in <begin_of_solution> <end_of_solution> tags, for example <begin_of_solution> (1 + 2) / 3 <end_of_solution>. Think step by step inside <begin_of_thought> <end_of_thought> tags."
+            "content": f"Using the numbers {numbers}, create an equation that equals {target}. You can use basic arithmetic operations (+, -, *, /) and each number can only be used once. Show your work in <begin_of_thought> <end_of_thought> tags. And return the final equation and answer in <begin_of_solution> <end_of_solution> tags within \\boxed{{}}, for example <begin_of_solution> \\boxed{{95 - \left( \\frac{{21}}{{3}} \\right) = 88}} <end_of_solution>. Think step by step inside <begin_of_thought> <end_of_thought> tags."
             #"content": ("Your role as an assistant involves thoroughly exploring questions through a systematic"
             #" long thinking process before providing the final precise and accurate solutions. This requires engaging"
             #" in a comprehensive cycle of analysis, summarizing, exploration, reassessment, reflection, backtracing,"
