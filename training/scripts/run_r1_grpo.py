@@ -146,16 +146,21 @@ def equation_reward_func(completions, target, nums, **kwargs):
         #logger.info(f"EQUATION: {equation}")
         #logger.info(f"TARGET: {target}")
         logger.info(f"SIMPLE EQ: {memoized_canonical_form(extract(equation))}")
-        logger.info(f"SIMPLE TR: {memoized_canonical_form(extract(target))}")
+        #logger.info()
+        logger.info(f"SIMPLE TR: {memoized_canonical_form(extract(gt))}")
         # Extract all numbers from the equation
 
+        #logger.info("OK LETS SEE")
 
-        if math_equal(memoized_canonical_form(extract(equation)),memoized_canonical_form(extract(target))):
-            reward.append(1.0)
+        if math_equal(memoized_canonical_form(extract(equation)),memoized_canonical_form(extract(gt))):
+            logger.info("YAY")
+            rewards.append(1.0)
         else:
-            reward.append(0.0)
+            #logger.info("DARN")
+            rewards.append(0.0)
         continue
       except Exception:
+        #logger.info("WHAT")
         # If evaluation fails, reward is 0
         rewards.append(0.0) 
 
