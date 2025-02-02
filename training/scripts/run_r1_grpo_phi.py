@@ -57,7 +57,7 @@ def format_reward_func(completions, target, **kwargs):
 
       try:
         # add synthetic <think> as its already part of the prompt and prefilled for the assistant to more easily match the regex
-        completion = "<begin_of_thought>" + completion
+        completion = "<|begin_of_thought|>" + completion
         if random.random() < 0.1:  # 1% chance to write samples into a file
           os.makedirs("completion_samples", exist_ok=True)
           log_file = os.path.join("completion_samples", "completion_samples.txt")
@@ -133,7 +133,7 @@ def equation_reward_func(completions, target, nums, **kwargs):
     for completion, gt, numbers in zip(completions, target, nums):
         try:
             # add synthetic <think> as its already part of the prompt and prefilled for the assistant to more easily match the regex
-            completion = "<begin_of_thought>" + completion
+            completion = "<|begin_of_thought|>" + completion
             # Check if the format is correct
             match = re.search(r"(?s)^<\|begin_of_thought\|>((?!<\|begin_of_thought\|>).*?)<\|end_of_thought\|>.*?<\|begin_of_solution\|>((?!<\|begin_of_solution\|>).*?)<\|end_of_solution\|>$", completion)
             if match is None:
