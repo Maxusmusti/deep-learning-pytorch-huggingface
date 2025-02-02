@@ -167,6 +167,7 @@ def equation_reward_func(completions, target, nums, **kwargs):
                 thread.join()  # Ensure it ends cleanly after the timeout
                 logger.error("The operation timed out!")
                 rewards.append(0.0)  # You can choose to append a timeout reward or just 0.0
+                continue
             # If thread completes in time, it will have added a reward
 
             #logger.info(f"REWARDS UPDATE: {rewards}")
