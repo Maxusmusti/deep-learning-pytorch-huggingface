@@ -13,7 +13,7 @@ from transformers import AutoTokenizer
 from datasets import load_dataset
 from trl import GRPOConfig, GRPOTrainer, get_peft_config, ModelConfig, TrlParser
 from math_cool import *
-
+import threading
 
 ########################
 # Custom dataclasses
@@ -131,96 +131,52 @@ def equation_reward_func(completions, target, nums, **kwargs):
     """
     rewards = []
     for completion, gt, numbers in zip(completions, target, nums):
-      try:
-        # add synthetic <think> as its already part of the prompt and prefilled for the assistant to more easily match the regex
-        completion = "<begin_of_thought>" + completion
-        #logger.info(f"FULL COMPLETION: {completion}")
-        # Check if the format is correct
-        match = re.search(r"(?s)^<begin_of_thought>((?!<begin_of_thought>).*?)<end_of_thought>.*?<begin_of_solution>((?!<begin_of_solution>).*?)<end_of_solution>$", completion)
-        #regex = r"(?s)^<begin_of_thought>((?!<begin_of_thought>).*?)<end_of_thought>.*?<begin_of_solution>((?!<begin_of_solution>).*?)<end_of_solution>$"
-        if match is None:
-            rewards.append(0.0)
-            continue
-        # Extract the "answer" part from the completion
-        equation = match.group(2).strip()
-        #logger.info(f"EQUATION: {equation}")
-        #logger.info(f"TARGET: {target}")
-        logger.info(f"SIMPLE EQ: {memoized_canonical_form(extract(equation))}")
-        #logger.info()
-        logger.info(f"SIMPLE TR: {memoized_canonical_form(extract(gt))}")
-        # Extract all numbers from the equation
-
-        #logger.info("OK LETS SEE")
-
-        if math_equal(memoized_canonical_form(extract(equation)),memoized_canonical_form(extract(gt))):
-            logger.info("YAY")
-            rewards.append(1.0)
-        else:
-            #logger.info("DARN")
-            rewards.append(0.0)
-        continue
-      except Exception:
-        #logger.info("WHAT")
-        # If evaluation fails, reward is 0
-        rewards.append(0.0) 
-
-
-        """
-        pattern = r'\\boxed\{([^{}]*(?:\{[^{}]*\}[^{}]*)*)\}'
-        matches = re.findall(pattern, equation)
-        equation = matches[0]
-
-        if "=" in equation:
-            sides = equation.split("=")
-            if sides[1].strip() == gt:
-                equation = sides[0]
-            else:
+        try:
+            # add synthetic <think> as its already part of the prompt and prefilled for the assistant to more easily match the regex
+            completion = "<begin_of_thought>" + completion
+            # Check if the format is correct
+            match = re.search(r"(?s)^<begin_of_thought>((?!<begin_of_thought>).*?)<end_of_thought>.*?<begin_of_solution>((?!<begin_of_solution>).*?)<end_of_solution>$", completion)
+            if match is None:
                 rewards.append(0.0)
                 continue
+            # Extract the "answer" part from the completion
+            equation = match.group(2).strip()
 
+            # Prepare the timeout logic
+            def process_equation():
+                try:
+                    logger.info(f"SIMPLE EQ: {memoized_canonical_form(extract(equation))}")
+                    logger.info(f"SIMPLE TR: {memoized_canonical_form(extract(gt))}")
+                    if math_equal(memoized_canonical_form(extract(equation)), memoized_canonical_form(extract(gt))):
+                        logger.info("YAY")
+                        rewards.append(1.0)
+                    else:
+                        rewards.append(0.0)
+                except Exception as e:
+                    logger.error(f"Error in equation processing: {str(e)}")
+                    rewards.append(0.0)
 
-        used_numbers = [int(n) for n in re.findall(r'\d+', equation)]
-        logger.info(f"Numbers: {used_numbers}")
-        # Check if all numbers are used exactly once
-        if sorted(used_numbers) != sorted(numbers.append(gt)):
-            rewards.append(0.0)
-            continue
-        logger.info(f"NUMBER CHECK PASSED")
+            # Create and start a thread to run the equation processing
+            thread = threading.Thread(target=process_equation)
+            thread.start()
 
-        if verify_equation(equation):
-            rewards.append(1.0)
-            logger.info("WOOHOO")
-        else:
-            rewards.append(0.0)
-            logger.info("RATS")
-        continue
+            # Wait for the thread to finish or timeout after 60 seconds
+            thread.join(timeout=60)
 
-        # Define a regex pattern that only allows numbers, operators, parentheses, and whitespace
-        allowed_pattern = r'^[\d+\-*/().\s]+$'
-        if not re.match(allowed_pattern, equation):
-           rewards.append(0.0)
-           continue
-        logger.info(f"PATTERN CHECK PASSED")
-        # Evaluate the equation with restricted globals and locals
-        result = eval(equation, {"__builtins__": None}, {})
-        logger.info(f"RESULT: {result} VS {gt}")
-        # Check if the equation is correct and matches the ground truth
-        if abs(float(result) - float(gt)) < 1e-5:
-            rewards.append(1.0)
-            logger.info(f"WE DID IT")
-            if random.random() < 0.10:  # 10% chance to write fully successful samples into a file
-                os.makedirs("completion_samples", exist_ok=True)
-                log_file = os.path.join("completion_samples", "success_completion_samples.txt")
-                with open(log_file, "a") as f:
-                    f.write(f"\n\n==============\n")
-                    f.write(completion)
-        else:
-            rewards.append(0.1)
-      except Exception:
+            if thread.is_alive():
+                logger.error("The operation timed out!")
+                rewards.append(0.0)  # You can choose to append a timeout reward or just 0.0
+                thread.join()  # Ensure it ends cleanly after the timeout
+            # If thread completes in time, it will have added a reward
+
+            #logger.info(f"REWARDS UPDATE: {rewards}")
+
+        except Exception:
             # If evaluation fails, reward is 0
-            rewards.append(0.0) 
-        """
+            rewards.append(0.0)
+
     return rewards
+
 
 def get_checkpoint(training_args: GRPOConfig):
     last_checkpoint = None

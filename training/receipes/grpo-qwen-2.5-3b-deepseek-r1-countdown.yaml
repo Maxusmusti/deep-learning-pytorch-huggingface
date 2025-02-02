@@ -7,7 +7,7 @@ torch_dtype: bfloat16
 attn_implementation: flash_attention_2
 bf16: true
 tf32: true
-output_dir: runs/granite-r1-test-3
+output_dir: runs/granite-r1-test-5
 
 # Dataset arguments
 dataset_id_or_path: /new_data/reasoning_rl/datasets/numina_math_cot_grpo.jsonl
@@ -17,8 +17,8 @@ dataset_id_or_path: /new_data/reasoning_rl/datasets/numina_math_cot_grpo.jsonl
 
 # Training arguments
 max_steps: 450
-per_device_train_batch_size: 2
-gradient_accumulation_steps: 4
+per_device_train_batch_size: 1
+gradient_accumulation_steps: 8
 gradient_checkpointing: true
 gradient_checkpointing_kwargs:
   use_reentrant: false
