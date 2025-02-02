@@ -261,7 +261,7 @@ def grpo_function(
     dataset = load_dataset("json", data_files=script_args.dataset_id_or_path, split=script_args.dataset_splits)
     # select a random subset of 50k samples
     hard_cap = 10000
-    dataset = dataset.shuffle(seed=42).select(range(max(dataset.num_rows, hard_cap)))
+    dataset = dataset.shuffle(seed=42).select(range(min(dataset.num_rows, hard_cap)))
 
     #####################
     # Prepare and format dataset
