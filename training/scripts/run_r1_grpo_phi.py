@@ -116,6 +116,19 @@ def verify_equation(equation):
         print(f"Error evaluating the equation: {e}")
         return False
 
+def process_equation(equation, gt):
+    try:
+        #logger.info(f"SIMPLE EQ: {memoized_canonical_form(extract(equation))}")
+        #logger.info(f"SIMPLE TR: {memoized_canonical_form(extract(gt))}")
+        if math_equal(memoized_canonical_form(extract(equation)), memoized_canonical_form(extract(gt))):
+            #logger.info("YAY")
+            return 1.0
+        else:
+            return 0.0
+    except Exception as e:
+        logger.error(f"Error in equation processing: {str(e)}")
+        return 0.0
+
 def equation_reward_func(completions, target, nums, **kwargs):
     """
     Evaluates completions based on:
@@ -143,39 +156,13 @@ def equation_reward_func(completions, target, nums, **kwargs):
             # Extract the "answer" part from the completion
             equation = match.group(2).strip()
 
-            # Prepare the timeout logic
-            def process_equation():
+            with concurrent.futures.ProcessPoolExecutor(max_workers=1) as executor:
+                future = executer.submit(process_eqation, (equation, gt))
                 try:
-                    #logger.info(f"SIMPLE EQ: {memoized_canonical_form(extract(equation))}")
-                    #logger.info(f"SIMPLE TR: {memoized_canonical_form(extract(gt))}")
-                    if math_equal(memoized_canonical_form(extract(equation)), memoized_canonical_form(extract(gt))):
-                        #logger.info("YAY")
-                        rewards.append(1.0)
-                    else:
-                        rewards.append(0.0)
+                    reward = future.result(timeout=70)
                 except Exception as e:
-                    logger.error(f"Error in equation processing: {str(e)}")
-                    rewards.append(0.0)
-
-            # Create and start a thread to run the equation processing
-            thread = threading.Thread(target=process_equation)
-            thread.start()
-
-            # Wait for the thread to finish or timeout after 60 seconds
-            thread.join(timeout=70)
-
-            if thread.is_alive():
-                thread.join()  # Ensure it ends cleanly after the timeout
-                logger.error("The operation timed out!")
-                if len(rewards) == reward_len:
-                    rewards.append(0.0)  # You can choose to append a timeout reward or just 0.0
-                continue
-
-            if len(rewards) == reward_len:
-                rewards.append(0.0)
-            # If thread completes in time, it will have added a reward
-
-            #logger.info(f"REWARDS UPDATE: {rewards}")
+                    reward = 0.0
+                rewards.append(reward)
 
         except Exception:
             # If evaluation fails, reward is 0
