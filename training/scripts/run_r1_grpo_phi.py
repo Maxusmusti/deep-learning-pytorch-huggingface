@@ -149,7 +149,7 @@ def equation_reward_func(completions, target, nums, **kwargs):
                     #logger.info(f"SIMPLE EQ: {memoized_canonical_form(extract(equation))}")
                     #logger.info(f"SIMPLE TR: {memoized_canonical_form(extract(gt))}")
                     if math_equal(memoized_canonical_form(extract(equation)), memoized_canonical_form(extract(gt))):
-                        logger.info("YAY")
+                        #logger.info("YAY")
                         rewards.append(1.0)
                     else:
                         rewards.append(0.0)
@@ -239,7 +239,7 @@ def grpo_function(
                 "thinking process. Please structure your response into two main sections: Thought and "
                 "Solution. In the Thought section, detail your reasoning process using the specified "
                 "format: <|begin_of_thought|> {thought with steps separated with '\n\n'} <|end_of_thought|> "
-                "Each step should include detailed considerations such as analisying questions, "
+                "Each step should include detailed considerations such as analyzing questions, "
                 "summarizing relevant findings, brainstorming new ideas, verifying the accuracy of "
                 "the current steps, refining any errors, and revisiting previous steps. In the "
                 "Solution section, based on various attempts, explorations, and reflections from the "
