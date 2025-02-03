@@ -14,6 +14,7 @@ from datasets import load_dataset
 from trl import GRPOConfig, GRPOTrainer, get_peft_config, ModelConfig, TrlParser
 from math_cool import *
 import threading
+import timeout_decorator
 
 ########################
 # Custom dataclasses
@@ -116,6 +117,7 @@ def verify_equation(equation):
         print(f"Error evaluating the equation: {e}")
         return False
 
+@timeout_decorator.timeout(70)  # 70 seconds timeout
 def process_equation(equation, gt):
     try:
         #logger.info(f"SIMPLE EQ: {memoized_canonical_form(extract(equation))}")
@@ -156,13 +158,12 @@ def equation_reward_func(completions, target, nums, **kwargs):
             # Extract the "answer" part from the completion
             equation = match.group(2).strip()
 
-            with concurrent.futures.ProcessPoolExecutor(max_workers=1) as executor:
-                future = executer.submit(process_eqation, (equation, gt))
-                try:
-                    reward = future.result(timeout=70)
-                except Exception as e:
-                    reward = 0.0
-                rewards.append(reward)
+            try:
+                reward = process_equation(equation, gt)
+            except timeout_decorator.timeout_decorator.TimeoutError:
+                logger.error("Function timed out!")
+                reward = 0.0
+            rewards.append(reward)
 
         except Exception:
             # If evaluation fails, reward is 0
