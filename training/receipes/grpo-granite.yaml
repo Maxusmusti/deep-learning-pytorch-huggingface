@@ -1,5 +1,5 @@
 # Model arguments
-model_name_or_path: /new_data/experiments_rh/granite-r1-bmo-bespoke-system-numinamath/hf_format/samples_752392
+model_name_or_path: /dev/shm/cool-granite
 #/new_data/experiments_rh/granite-r1-bespoke-v8/hf_format/samples_2761884
 #Qwen/Qwen2.5-3B-Instruct
 model_revision: main
