@@ -117,7 +117,7 @@ def verify_equation(equation):
         print(f"Error evaluating the equation: {e}")
         return False
 
-@timeout_decorator.timeout(70)  # 70 seconds timeout
+@timeout_decorator.timeout(2)  # 2 seconds timeout
 def process_equation(equation, gt):
     try:
         #logger.info(f"SIMPLE EQ: {memoized_canonical_form(extract(equation))}")
@@ -147,7 +147,6 @@ def equation_reward_func(completions, target, nums, **kwargs):
     rewards = []
     for completion, gt, numbers in zip(completions, target, nums):
         try:
-            reward_len = len(rewards)
             # add synthetic <think> as its already part of the prompt and prefilled for the assistant to more easily match the regex
             completion = "<|begin_of_thought|>" + completion
             # Check if the format is correct
