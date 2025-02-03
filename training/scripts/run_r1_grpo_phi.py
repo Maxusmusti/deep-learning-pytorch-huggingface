@@ -165,7 +165,8 @@ def equation_reward_func(completions, target, nums, **kwargs):
                 reward = 0.0
             rewards.append(reward)
 
-        except Exception:
+        except Exception as e:
+            logger.info(f"Exception type: {e.__class__.__name__}")
             # If evaluation fails, reward is 0
             rewards.append(0.0)
 
