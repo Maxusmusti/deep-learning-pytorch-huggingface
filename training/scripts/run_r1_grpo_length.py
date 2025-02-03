@@ -76,7 +76,10 @@ def format_reward_func(completions, target, **kwargs):
         if match is None or len(match.groups()) != 2:
             rewards.append(0.0)
         else:
-            rewards.append(1.0)
+            if len(match.group(1).strip()) < 1000:
+                rewards.append(0.0)
+            else:
+                rewards.append(1.0)
       except Exception:
         rewards.append(0.0)
     return rewards
