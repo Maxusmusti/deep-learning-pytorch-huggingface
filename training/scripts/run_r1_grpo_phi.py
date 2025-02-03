@@ -146,8 +146,8 @@ def equation_reward_func(completions, target, nums, **kwargs):
             # Prepare the timeout logic
             def process_equation():
                 try:
-                    logger.info(f"SIMPLE EQ: {memoized_canonical_form(extract(equation))}")
-                    logger.info(f"SIMPLE TR: {memoized_canonical_form(extract(gt))}")
+                    #logger.info(f"SIMPLE EQ: {memoized_canonical_form(extract(equation))}")
+                    #logger.info(f"SIMPLE TR: {memoized_canonical_form(extract(gt))}")
                     if math_equal(memoized_canonical_form(extract(equation)), memoized_canonical_form(extract(gt))):
                         logger.info("YAY")
                         rewards.append(1.0)
