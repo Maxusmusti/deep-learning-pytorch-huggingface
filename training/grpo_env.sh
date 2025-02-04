@@ -13,6 +13,7 @@ fi
 
 conda activate mpo || { echo "Failed to activate Conda environment"; exit 1; }
 
+pip install "torch==2.5.1" tensorboard "setuptools<71.0.0"
 pip install wheel
 pip install flash-attn
 
