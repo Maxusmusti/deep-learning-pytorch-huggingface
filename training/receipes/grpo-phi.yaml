@@ -7,7 +7,7 @@ torch_dtype: bfloat16
 attn_implementation: flash_attention_2
 bf16: true
 tf32: true
-output_dir: runs/phi-r1-test-new
+output_dir: runs/backtrack-phi
 
 # Dataset arguments
 dataset_id_or_path: /new_data/reasoning_rl/datasets/numinamath_cot_boxed_100k_filtered.jsonl
@@ -18,8 +18,8 @@ dataset_id_or_path: /new_data/reasoning_rl/datasets/numinamath_cot_boxed_100k_fi
 
 # Training arguments
 max_steps: 900
-per_device_train_batch_size: 2
-gradient_accumulation_steps: 4
+per_device_train_batch_size: 1
+gradient_accumulation_steps: 8
 gradient_checkpointing: true
 gradient_checkpointing_kwargs:
   use_reentrant: false
@@ -29,7 +29,7 @@ warmup_ratio: 0.03
 # GRPO specific parameters
 beta: 0.001 # 0.04 as in the deepseek math paper 0.001 from https://hijkzzz.notion.site/unraveling-rlhf-and-its-variants-engineering-insights#147d9a33ecc9806090f3d5c749d31f05
 max_prompt_length: 517
-max_completion_length: 2048
+max_completion_length: 4096
 num_generations: 8
 use_vllm: true
 vllm_device: "cuda:7"
