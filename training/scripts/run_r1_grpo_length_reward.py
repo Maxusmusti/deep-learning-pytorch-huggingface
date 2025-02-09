@@ -47,7 +47,7 @@ def log_linear(input_value, max_value=12288):
         return 0
     else:
         # Using logarithmic scaling and normalizing to 0-1 range
-        return min(1, math.log(input_value + 1) / math.log(max_value + 1))
+        return min(1, math.log(0.3 * input_value + 1) / math.log(max_value + 1))
 
 def format_reward_func(completions, target, **kwargs):
     """
