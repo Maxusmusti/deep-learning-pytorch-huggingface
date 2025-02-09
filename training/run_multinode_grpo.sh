@@ -14,7 +14,7 @@ HF_HUB_ENABLE_HF_TRANSFER=1 ACCELERATE_LOG_LEVEL=info accelerate launch \
     --config_file="./configs/accelerate_configs/deepspeed_zero3_multinode.yaml" \
     --machine_rank $machine_rank \
     --main_process_ip $main_process_ip \
-    scripts/run_r1_grpo_length_wait.py --config $config_file \
+    scripts/run_r1_grpo_length_reward.py --config $config_file \
         --output_dir $output_dir \
 
 

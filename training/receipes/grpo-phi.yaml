@@ -1,5 +1,5 @@
 # Model arguments
-model_name_or_path: /dev/shm/phi-4
+model_name_or_path: /dev/shm/but-wait-phi
 #/new_data/experiments_rh/granite-r1-bespoke-v8/hf_format/samples_2761884
 #Qwen/Qwen2.5-3B-Instruct
 model_revision: main
@@ -7,10 +7,10 @@ torch_dtype: bfloat16
 attn_implementation: flash_attention_2
 bf16: true
 tf32: true
-output_dir: runs/backtrack-phi
+output_dir: runs/limo-evo-phi
 
 # Dataset arguments
-dataset_id_or_path: /new_data/reasoning_rl/datasets/numinamath_cot_boxed_100k_filtered.jsonl
+dataset_id_or_path: /new_data/data_vault/reasoning/limo_cleaned.jsonl
 #/new_data/reasoning_rl/datasets/numinamath_cot_boxed_50k.jsonl
 
 # Lora Arguments
@@ -19,15 +19,15 @@ dataset_id_or_path: /new_data/reasoning_rl/datasets/numinamath_cot_boxed_100k_fi
 # Training arguments
 max_steps: 900
 per_device_train_batch_size: 1
-gradient_accumulation_steps: 8
+gradient_accumulation_steps: 2
 gradient_checkpointing: true
 gradient_checkpointing_kwargs:
   use_reentrant: false
-learning_rate: 5.0e-7 # 1.0e-6 as in the deepseek math paper 5-e7 from https://hijkzzz.notion.site/unraveling-rlhf-and-its-variants-engineering-insights#147d9a33ecc9806090f3d5c749d31f05
+learning_rate: 1e-6 # 1.0e-6 as in the deepseek math paper 5-e7 from https://hijkzzz.notion.site/unraveling-rlhf-and-its-variants-engineering-insights#147d9a33ecc9806090f3d5c749d31f05
 lr_scheduler_type: cosine
 warmup_ratio: 0.03
 # GRPO specific parameters
-beta: 0.001 # 0.04 as in the deepseek math paper 0.001 from https://hijkzzz.notion.site/unraveling-rlhf-and-its-variants-engineering-insights#147d9a33ecc9806090f3d5c749d31f05
+beta: 0.01 # 0.04 as in the deepseek math paper 0.001 from https://hijkzzz.notion.site/unraveling-rlhf-and-its-variants-engineering-insights#147d9a33ecc9806090f3d5c749d31f05
 max_prompt_length: 517
 max_completion_length: 4096
 num_generations: 8
@@ -41,7 +41,7 @@ logging_steps: 2
 report_to:
 - tensorboard
 save_strategy: "steps"
-save_steps: 15
+save_steps: 10
 seed: 42
 #save_only_model: true
 
