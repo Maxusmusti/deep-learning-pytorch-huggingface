@@ -82,7 +82,7 @@ def format_reward_func(completions, target, **kwargs):
         if match is None or len(match.groups()) != 2:
             rewards.append(0.0)
             continue
-        reward = 0.5 + 0.5 * log_linear(len(match.group(1).strip())):
+        reward = 0.5 + 0.5 * log_linear(len(match.group(1).strip()))
         rewards.append(reward)
       except Exception:
         rewards.append(0.0)
@@ -216,7 +216,7 @@ def grpo_function(
     # Load dataset from Hugging Face Hub
     dataset = load_dataset("json", data_files=script_args.dataset_id_or_path, split=script_args.dataset_splits)
     # select a random subset of 50k samples
-    dataset = dataset.shuffle(seed=42).select(range(100000))
+    dataset = dataset.shuffle(seed=42).select(range(811))
 
     #####################
     # Prepare and format dataset
