@@ -42,7 +42,7 @@ logger.addHandler(handler)
 # Helper functions
 ########################
 
-def log_linear(input_value, max_value=4096):
+def log_linear(input_value, max_value=12288):
     if input_value == 0:
         return 0
     else:
