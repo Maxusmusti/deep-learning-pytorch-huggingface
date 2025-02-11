@@ -82,7 +82,7 @@ def format_reward_func(completions, target, **kwargs):
         if match is None or len(match.groups()) != 2:
             rewards.append(0.0)
             continue
-        reward = 0.5 + 0.5 * log_linear(len(match.group(1).strip()))
+        reward = 1 #+ 0.5 * log_linear(len(match.group(1).strip()))
         rewards.append(reward)
       except Exception:
         rewards.append(0.0)
@@ -138,13 +138,13 @@ def process_equation(equation, gt):
         logger.error(f"Error in equation processing: {str(e)}")
         return 0.0
 
-def cosine_reward_func(completions, target, **kwargs):
+def cosine_reward_func(completions, target, nums, tokenizer, **kwargs):
     rewards = []
-    min_value_wrong = -1.0
-    max_value_wrong = -0.5
-    min_value_correct = 0.5
-    max_value_correct = 1.0
-    max_len = 12888
+    min_value_wrong = 0
+    max_value_wrong = -1
+    min_value_correct = 0
+    max_value_correct = 0.5
+    max_len = 4000
     for completion, gt in zip(completions, target):
         completion = "<|begin_of_thought|>" + completion
         match = re.search(r"(?s)^<\|begin_of_thought\|>((?!<\|begin_of_thought\|>).*?)<\|end_of_thought\|>.*?<\|begin_of_solution\|>((?!<\|begin_of_solution\|>).*?)<\|end_of_solution\|>$", completion)
@@ -163,7 +163,7 @@ def cosine_reward_func(completions, target, **kwargs):
 
         is_correct = (correctness == 1.0)
 
-        gen_len = len(thought)
+        gen_len = len(tokenizer(thought, add_special_tokens=False).input_ids)
 
         # Apply cosine scaling based on length
         progress = gen_len / max_len
@@ -174,8 +174,8 @@ def cosine_reward_func(completions, target, **kwargs):
             max_value = max_value_correct
         else:
             # Swap min/max for incorrect answers
-            min_value = max_value_wrong
-            max_value = min_value_wrong
+            max_value = max_value_wrong
+            min_value = min_value_wrong
 
         reward = min_value + 0.5 * (max_value - min_value) * (1.0 + cosine)
         rewards.append(float(reward))
