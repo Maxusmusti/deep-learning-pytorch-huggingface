@@ -140,12 +140,13 @@ def process_equation(equation, gt):
 
 def cosine_reward_func(completions, target, **kwargs):
     rewards = []
-    min_value_wrong = -1.0,
-    max_value_wrong = -0.5,
-    min_value_correct = 0.5,
-    max_value_correct = 1.0,
+    min_value_wrong = -1.0
+    max_value_wrong = -0.5
+    min_value_correct = 0.5
+    max_value_correct = 1.0
     max_len = 12888
     for completion, gt in zip(completions, target):
+        completion = "<|begin_of_thought|>" + completion
         match = re.search(r"(?s)^<\|begin_of_thought\|>((?!<\|begin_of_thought\|>).*?)<\|end_of_thought\|>.*?<\|begin_of_solution\|>((?!<\|begin_of_solution\|>).*?)<\|end_of_solution\|>$", completion)
         if match is None:
             rewards.append(0.0)
