@@ -47,7 +47,7 @@ def log_linear(input_value, max_value=12288):
         return 0
     else:
         # Using logarithmic scaling and normalizing to 0-1 range
-        return min(1, math.log(0.3 * input_value + 1) / math.log(max_value + 1))
+        return min(1, math.log(0.5 * input_value + 1) / math.log(max_value + 1))
 
 def format_reward_func(completions, target, **kwargs):
     """
@@ -137,6 +137,49 @@ def process_equation(equation, gt):
     except Exception as e:
         logger.error(f"Error in equation processing: {str(e)}")
         return 0.0
+
+def cosine_reward_func(completions, target, **kwargs):
+    rewards = []
+    min_value_wrong = -1.0,
+    max_value_wrong = -0.5,
+    min_value_correct = 0.5,
+    max_value_correct = 1.0,
+    max_len = 12888
+    for completion, gt in zip(completions, target):
+        match = re.search(r"(?s)^<\|begin_of_thought\|>((?!<\|begin_of_thought\|>).*?)<\|end_of_thought\|>.*?<\|begin_of_solution\|>((?!<\|begin_of_solution\|>).*?)<\|end_of_solution\|>$", completion)
+        if match is None:
+            rewards.append(0.0)
+            continue
+        # Extract the "answer" part from the completion
+        equation = match.group(2).strip()
+        thought = match.group(1).strip()
+
+        try:
+            correctness = process_equation(equation, gt)
+        except timeout_decorator.timeout_decorator.TimeoutError:
+            logger.error("Function timed out!")
+            correctness = 0
+
+        is_correct = (correctness == 1.0)
+
+        gen_len = len(thought)
+
+        # Apply cosine scaling based on length
+        progress = gen_len / max_len
+        cosine = math.cos(progress * math.pi)
+
+        if is_correct:
+            min_value = min_value_correct
+            max_value = max_value_correct
+        else:
+            # Swap min/max for incorrect answers
+            min_value = max_value_wrong
+            max_value = min_value_wrong
+
+        reward = min_value + 0.5 * (max_value - min_value) * (1.0 + cosine)
+        rewards.append(float(reward))
+
+    return rewards
 
 def equation_reward_func(completions, target, nums, **kwargs):
     """
@@ -274,7 +317,7 @@ def grpo_function(
 
     trainer = GRPOTrainer(
       model=model_args.model_name_or_path,
-      reward_funcs=[format_reward_func, equation_reward_func],
+      reward_funcs=[format_reward_func, equation_reward_func, cosine_reward_func],
       args=training_args,
       train_dataset=train_dataset,
       eval_dataset=test_dataset,
