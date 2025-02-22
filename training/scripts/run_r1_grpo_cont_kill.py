@@ -198,15 +198,8 @@ def equation_reward_func(completions, target, nums, **kwargs):
     rewards = []
     for completion, gt, numbers in zip(completions, target, nums):
         try:
-            # add synthetic <think> as its already part of the prompt and prefilled for the assistant to more easily match the regex
-            completion = "<|begin_of_thought|>" + completion
-            # Check if the format is correct
-            match = re.search(r"(?s)^<\|begin_of_thought\|>((?!<\|begin_of_thought\|>).*?)<\|end_of_thought\|>.*?<\|begin_of_solution\|>((?!<\|begin_of_solution\|>).*?)<\|end_of_solution\|>$", completion)
-            if match is None:
-                rewards.append(0.0)
-                continue
             # Extract the "answer" part from the completion
-            equation = match.group(2).strip()
+            equation = completion.split("<|continue|>")[-1]
 
             try:
                 reward = process_equation(equation, gt)
@@ -268,40 +261,14 @@ def grpo_function(
 
     # gemerate r1 prompt with a prefix for the model to already start with the thinking process
     def generate_r1_prompt(question, target):
-        r1_prefix = [{
-            "role": "system",
-            "content": (
-                "Your role as an assistant involves thoroughly exploring questions through a systematic "
-                "long thinking process before providing the final precise and accurate solutions. This "
-                "requires engaging in a comprehensive cycle of analysis, summarizing, exploration, "
-                "reassessment, reflection, backtracing, and iteration to develop well-considered "
-                "thinking process. Please structure your response into two main sections: Thought and "
-                "Solution. In the Thought section, detail your reasoning process using the specified "
-                "format: <|begin_of_thought|> {thought with steps separated with '\n\n'} <|end_of_thought|> "
-                "Each step should include detailed considerations such as analyzing questions, "
-                "summarizing relevant findings, brainstorming new ideas, verifying the accuracy of "
-                "the current steps, refining any errors, and revisiting previous steps. In the "
-                "Solution section, based on various attempts, explorations, and reflections from the "
-                "Thought section, systematically present the final solution that you deem correct. "
-                "The solution should remain a logical, accurate, concise expression style and detail "
-                "necessary step needed to reach the conclusion, formatted as follows: "
-                "<|begin_of_solution|> {final formatted, precise, and clear solution within \\boxed{}.} <|end_of_solution|> "
-                "Now, try to solve the following question "
-                "through the above guidelines:"
-            )
-          },
+        r1_prefix = [
           { 
             "role": "user",
             #"content": f"Using the numbers {numbers}, create an equation that equals {target}. You can use basic arithmetic operations (+, -, *, /) and each number can only be used once. Show your work in <begin_of_thought> <end_of_thought> tags. And return the final equation and answer in \\boxed{{}}, for example  \\boxed{{95 - \left( \\frac{{21}}{{3}} \\right) = 88}}, within the <begin_of_solution>."
-            "content": f"{question}"
+            "content": question
           },
-          {
-            "role": "assistant",
-            #"content": "Let me solve this step by step.\n<think>"
-            "content": "Let me solve this step by step.\n<|begin_of_thought|>"
-          }
           ]
-        return {"prompt": tokenizer.apply_chat_template(r1_prefix, tokenize=False, continue_final_message=True), "target": target, "nums": question}
+        return {"prompt": tokenizer.apply_chat_template(r1_prefix, tokenize=False, add_generation_prompt=True), "target": target, "nums": question}
 
     # convert our dataset to the r1 prompt
     dataset = dataset.map(lambda x: generate_r1_prompt(x["problem"], x["answer"]))
@@ -318,7 +285,7 @@ def grpo_function(
 
     trainer = GRPOTrainer(
       model=model_args.model_name_or_path,
-      reward_funcs=[format_reward_func, equation_reward_func, cosine_reward_func],
+      reward_funcs=[equation_reward_func],
       args=training_args,
       train_dataset=train_dataset,
       eval_dataset=test_dataset,

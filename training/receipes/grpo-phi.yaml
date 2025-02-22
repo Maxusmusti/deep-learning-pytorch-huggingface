@@ -1,5 +1,5 @@
 # Model arguments
-model_name_or_path: /dev/shm/but-wait-phi
+model_name_or_path: /dev/shm/cont-kill-phi-3
 #/new_data/experiments_rh/granite-r1-bespoke-v8/hf_format/samples_2761884
 #Qwen/Qwen2.5-3B-Instruct
 model_revision: main
@@ -7,7 +7,7 @@ torch_dtype: bfloat16
 attn_implementation: flash_attention_2
 bf16: true
 tf32: true
-output_dir: runs/limo-evo-phi
+output_dir: runs/cont-kill-phi
 
 # Dataset arguments
 dataset_id_or_path: /new_data/data_vault/reasoning/limo_cleaned.jsonl
